@@ -27,7 +27,7 @@ config :hammer,
 ```
 
 (the `redix_remastered_config` arg is a keyword-list which is passed to
-[RedixRemastered](https://github.com/stiang/redix-cluster), it's also aliased to `redis_remastered_config`,
+[RedixCluster](https://github.com/stiang/redix-cluster), it's also aliased to `redis_remastered_config`,
 with an `s`)
 
 And that's it, calls to `Hammer.check_rate/3` and so on will use Redis to store
