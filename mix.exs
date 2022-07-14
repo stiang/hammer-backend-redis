@@ -1,18 +1,18 @@
-defmodule HammerBackendRedis.Mixfile do
+defmodule HammerBackendRedisCluster.Mixfile do
   use Mix.Project
 
   def project do
     [
-      app: :hammer_backend_redis,
-      description: "Redis backend for Hammer rate-limiter",
+      app: :hammer_backend_redis_cluster,
+      description: "Redis Cluster backend for Hammer rate-limiter",
       package: [
-        name: :hammer_backend_redis,
-        maintainers: ["Shane Kilkelly (shane@kilkelly.me)"],
+        name: :hammer_backend_redis_cluster,
+        maintainers: ["Stian Grytøyr (stian@grytoyr.net)"],
         licenses: ["MIT"],
-        links: %{"GitHub" => "https://github.com/ExHammer/hammer-backend-redis"}
+        links: %{"GitHub" => "https://github.com/stiang/hammer-backend-redis-cluster"}
       ],
-      source_url: "https://github.com/ExHammer/hammer-backend-redis",
-      homepage_url: "https://github.com/ExHammer/hammer-backend-redis",
+      source_url: "https://github.com/stiang/hammer-backend-redis-cluster",
+      homepage_url: "https://github.com/stiang/hammer-backend-redis-cluster",
       version: "6.1.0",
       elixir: "~> 1.6",
       build_embedded: Mix.env() == :prod,
@@ -48,7 +48,7 @@ defmodule HammerBackendRedis.Mixfile do
   # Type "mix help deps" for more examples and options
   defp deps do
     [
-      {:redix, "~> 0.8"},
+      {:redix_cluster_remastered, git: "https://github.com/stiang/redix-cluster.git"},
       {:hammer, "6.0.0"},
       {:mock, "~> 0.3.3", only: :test},
       {:ex_doc, "~> 0.16", only: :dev},
