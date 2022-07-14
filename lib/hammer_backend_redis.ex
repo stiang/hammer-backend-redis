@@ -1,24 +1,24 @@
-defmodule Hammer.Backend.Redis do
+defmodule Hammer.Backend.RedisCluster do
   @moduledoc """
-  Documentation for Hammer.Backend.Redis
+  Documentation for Hammer.Backend.RedisCluster
 
-  This backend uses the [Redix](https://hex.pm/packages/redix) library to connect to Redis.
+  This backend uses the [RedixCluster](https://github.com/stiang/redix-cluster) library to connect to Redis.
 
   The backend process is started by calling `start_link`:
 
-      Hammer.Backend.Redis.start_link(
+      Hammer.Backend.RedisCluster.start_link(
         expiry_ms: 60_000 * 10,
-        redix_config: [host: "example.com", port: 5050]
+        redix_remastered_config: [host: "example.com", port: 5050]
       )
 
   Options are:
 
   - `expiry_ms`: Expiry time of buckets in milliseconds,
     used to set TTL on Redis keys. This configuration is mandatory.
-  - `redix_config`: Keyword list of options to the `Redix` redis client,
-    also aliased to `redis_config`
+  - `redix_remastered_config`: Keyword list of options to the `RedixClient` redis client,
+    also aliased to `redis_remastered_config`
   - `redis_url`: String url of redis server to connect to
-    (optional, invokes Redix.start_link/2)
+    (optional, invokes RedixCluster.start_link/2)
   """
 
   @type bucket_key :: {bucket :: integer, id :: String.t()}
@@ -118,17 +118,17 @@ defmodule Hammer.Backend.Redis do
     redix_config =
       Keyword.get(
         args,
-        :redix_config,
-        Keyword.get(args, :redis_config, [])
+        :redix_remastered_config,
+        Keyword.get(args, :redis_remastered_config, [])
       )
 
     redis_url = Keyword.get(args, :redis_url, nil)
 
     {:ok, redix} =
       if is_binary(redis_url) && byte_size(redis_url) > 0 do
-        Redix.start_link(redis_url, redix_config)
+        RedixCluster.start_link(redis_url, redix_config)
       else
-        Redix.start_link(redix_config)
+        RedixCluster.start_link(redix_config)
       end
 
     {:ok, %{redix: redix, expiry_ms: expiry_ms}}
@@ -150,7 +150,7 @@ defmodule Hammer.Backend.Redis do
     command = ["HMGET", redis_key, "bucket", "id", "count", "created", "updated"]
 
     result =
-      case Redix.command(r, command) do
+      case RedixCluster.command(r, command) do
         {:ok, [nil, nil, nil, nil, nil]} ->
           {:ok, nil}
 
@@ -171,13 +171,13 @@ defmodule Hammer.Backend.Redis do
     bucket_set_key = make_bucket_set_key(id)
 
     result =
-      case Redix.command(r, ["SMEMBERS", bucket_set_key]) do
+      case RedixCluster.command(r, ["SMEMBERS", bucket_set_key]) do
         {:ok, []} ->
           {:ok, 0}
 
         {:ok, keys} ->
           {:ok, [_, _, _, [count_deleted, _]]} =
-            Redix.pipeline(r, [
+            RedixCluster.pipeline(r, [
               ["MULTI"],
               ["DEL" | keys],
               ["DEL", bucket_set_key],
@@ -201,7 +201,7 @@ defmodule Hammer.Backend.Redis do
   defp do_count_hit(r, key, now, increment, expiry, attempt) do
     redis_key = make_redis_key(key)
 
-    case Redix.command(r, ["EXISTS", redis_key]) do
+    case RedixCluster.command(r, ["EXISTS", redis_key]) do
       {:ok, 0} ->
         create_bucket(r, key, now, increment, expiry, attempt)
 
@@ -218,11 +218,11 @@ defmodule Hammer.Backend.Redis do
     bucket_set_key = make_bucket_set_key(id)
 
     # Watch to ensure that another node hasn't created the bucket first.
-    {:ok, "OK"} = Redix.command(r, ["WATCH", bucket_set_key])
-    {:ok, "OK"} = Redix.command(r, ["WATCH", redis_key])
+    {:ok, "OK"} = RedixCluster.command(r, ["WATCH", bucket_set_key])
+    {:ok, "OK"} = RedixCluster.command(r, ["WATCH", redis_key])
 
     result =
-      Redix.pipeline(r, [
+      RedixCluster.pipeline(r, [
         ["MULTI"],
         [
           "HMSET",
@@ -278,7 +278,7 @@ defmodule Hammer.Backend.Redis do
     redis_key = make_redis_key(key)
 
     {:ok, ["OK", "QUEUED", "QUEUED", [count, 0]]} =
-      Redix.pipeline(r, [
+      RedixCluster.pipeline(r, [
         ["MULTI"],
         ["HINCRBY", redis_key, "count", increment],
         ["HSET", redis_key, "updated", now],
