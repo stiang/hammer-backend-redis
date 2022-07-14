@@ -4,8 +4,8 @@ use Mix.Config
 
 
 config :hammer,
-  backend: {Hammer.Backend.Redis, [expiry_ms: 60_000 * 60 * 2,
-                                   redix_config: [host: "localhost",
+  backend: {Hammer.Backend.RedisCluster, [expiry_ms: 60_000 * 60 * 2,
+                                   redix_remastered_config: [host: "localhost",
                                                   port: 6379]]}
 
 # This configuration is loaded before any dependency and is restricted
@@ -16,11 +16,11 @@ config :hammer,
 
 # You can configure for your application as:
 #
-#     config :hammer_backend_redis, key: :value
+#     config :hammer_backend_redis_cluster, key: :value
 #
 # And access this configuration in your application as:
 #
-#     Application.get_env(:hammer_backend_redis, :key)
+#     Application.get_env(:hammer_backend_redis_cluster, :key)
 #
 # Or configure a 3rd-party app:
 #
